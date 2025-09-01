@@ -1,15 +1,15 @@
 import os
+import requests
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from uuid import UUID
-import crud, models, schemas, messaging # <-- FIX IS HERE
-from database import SessionLocal, engine # <-- FIX IS HERE
+import crud, models, schemas, messaging
+from database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
-# These must match the user_service to decode tokens correctly
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
@@ -50,6 +50,34 @@ def submit_job(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id)
 ):
+    JOB_COST = 10
+    BILLING_SERVICE_URL = "http://127.0.0.1:8002"
+
+    try:
+        # Step 1: Check the user's balance by calling the billing service
+        balance_response = requests.get(f"{BILLING_SERVICE_URL}/balance/{current_user_id}")
+        balance_response.raise_for_status()
+        current_balance = balance_response.json().get("balance")
+
+        # Step 2: If balance is insufficient, reject the job
+        if current_balance < JOB_COST:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Please Pay and recharge your Credits to continue"
+            )
+
+        # Step 3: Tell the billing service to deduct credits
+        deduct_payload = {"user_id": str(current_user_id), "amount": JOB_COST}
+        deduct_response = requests.post(f"{BILLING_SERVICE_URL}/transactions/deduct", json=deduct_payload)
+        deduct_response.raise_for_status()
+
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Could not connect to the Billing Service: {e}"
+        )
+
+    # If all checks and deductions pass, proceed to create and queue the job
     db_job = crud.create_job(db=db, job=job, user_id=current_user_id)
     
     job_details = {
@@ -62,7 +90,7 @@ def submit_job(
     if not messaging.publish_job(job_details):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to queue job. Please try again later."
+            detail="Failed to queue job after credit deduction. Please contact support."
         )
         
     return db_job
