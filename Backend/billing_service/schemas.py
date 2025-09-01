@@ -17,3 +17,7 @@ class CreditPolicyOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class DeductRequest(BaseModel):
+    user_id: UUID
+    amount: int
