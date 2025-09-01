@@ -1,9 +1,17 @@
 from sqlalchemy.orm import Session
-import models, schemas # <-- FIX IS HERE
+import models, schemas
 from uuid import UUID
 
 def create_job(db: Session, job: schemas.JobCreate, user_id: UUID):
-    db_job = models.Job(**job.model_dump(), user_id=user_id)
+    # --- THE FIX IS HERE ---
+    # We convert the job Pydantic model into a dictionary,
+    # but specifically cast the HttpUrl object to a plain string before creating the database model.
+    job_data = job.model_dump()
+    job_data['input_url'] = str(job.input_url) # Convert HttpUrl to string
+
+    db_job = models.Job(**job_data, user_id=user_id)
+    # -----------------------
+
     db.add(db_job)
     db.commit()
     db.refresh(db_job)
