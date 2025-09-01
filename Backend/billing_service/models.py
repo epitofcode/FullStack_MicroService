@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
-from database import Base # <-- FIX IS HERE
+from database import Base
 from datetime import datetime
 import uuid
 
@@ -15,7 +15,7 @@ class CreditPolicy(Base):
 class UserBalance(Base):
     __tablename__ = "user_balances"
     user_id = Column(UUID(as_uuid=True), primary_key=True)
-    balance = Column(Integer, nullable=False, default=10000) # Initial free credits
+    balance = Column(Integer, nullable=False, default=100) # Default set to 100 free credits
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class Transaction(Base):
