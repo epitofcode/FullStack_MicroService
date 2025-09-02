@@ -14,8 +14,7 @@ The backend is designed as a set of four independent but interconnected microser
 2.  **Billing Service:** The accountant. Manages user credit balances, seeds the system with the available AI models and their costs, and provides endpoints for credit deduction and transaction history.
 3.  **Queue Service:** The job dispatcher. Authenticates user requests, validates them against the billing service, and places valid AI tasks into a reliable message queue for background processing.
 4.  **Orchestration Service:** The engine room. A headless background worker that listens for new jobs, calls the appropriate third-party AI provider (OpenAI, Sarvam.ai, etc.), and updates the job status with the final result.
-
-![Architecture Diagram](https://i.imgur.com/G20T1J7.png) <!-- You can replace this with a link to your own diagram -->
+<!-- You can replace this with a link to your own diagram -->
 
 ---
 
