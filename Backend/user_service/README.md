@@ -1,57 +1,51 @@
-
 # User Service
 
-## Description
+**Role:** Gatekeeper & Identity Manager
 
-This service acts as the **Gatekeeper** for the entire FarmVidhya platform. Its sole responsibility is to manage user identity, including registration, login, and the creation of secure authentication tokens (JWTs). It is the authoritative source for "who a user is."
+This service handles all user authentication and registration workflows.
 
-## Tech Stack & Core Dependencies
+## Features
 
-*   **Framework:** FastAPI
-*   **Database:** PostgreSQL with SQLAlchemy (ORM)
-*   **Security:**
-    *   `passlib[bcrypt]` for secure password hashing.
-    *   `python-jose[cryptography]` for creating and managing JWTs.
-    *   `email-validator` for validating email formats via Pydantic.
-
-## Core Concepts & Flow
-
-This service implements a standard and secure token-based authentication workflow.
-
-1.  **Sign-up Flow (`POST /signup`):**
-    *   A user submits their email and password.
-    *   The service validates that the email is correctly formatted.
-    *   It checks the database to ensure the email is not already in use.
-    *   The plain-text password is put through the **bcrypt hashing algorithm** via `passlib`.
-    *   The user's email and the **hashed password** are stored in the `users` table. The plain-text password is never stored.
-
-2.  **Login Flow (`POST /login`):**
-    *   A user submits their email and password.
-    *   The service finds the user in the database by their email.
-    *   It uses `passlib` to compare the submitted password against the stored hash.
-    *   If they match, it uses `python-jose` to create a digitally signed **JSON Web Token (JWT)**. This token contains the user's ID and an expiration time.
-    *   This JWT is returned to the user. The user must include this token in the `Authorization` header of all future requests to other services to prove their identity.
+*   **User Sign-up:** Creates a new, inactive user account.
+*   **OTP Verification:** Generates a 6-digit OTP, securely stores its hash, and sends it to the user's email for account verification.
+*   **Secure Login:** Authenticates active users with their email and password.
+*   **JWT Generation:** Creates secure JSON Web Tokens for authenticated users to access other services.
 
 ## API Endpoints
 
 *   `POST /signup`: Register a new user.
-*   `POST /login`: Authenticate a user and receive a JWT access token.
-*   `GET /docs`: Interactive API documentation.
+*   `POST /verify-otp`: Verify an account using the OTP sent via email.
+*   `POST /login`: Log in to receive a JWT access token.
 
-## How to Run Locally
+## Setup & Launch
 
-1.  **Navigate to Directory:** `cd Backend/user_service`
-2.  **Create & Activate Venv:**
-    ```bash
+1.  **Navigate to this directory** in a dedicated terminal.
+2.  **Create and activate a virtual environment:**
+    ```powershell
     python -m venv venv
     .\venv\Scripts\Activate.ps1
     ```
-3.  **Install Dependencies:** `pip install -r requirements.txt`
-4.  **Set Environment Variables (PowerShell):**
+3.  **Install dependencies:**
+    ```powershell
+    pip install -r requirements.txt
+    ```
+4.  **Create `.env` file:**
+    Create a file named `.env` in this directory and add your SMTP credentials:
+    ```env
+    MAIL_USERNAME=your-email@gmail.com
+    MAIL_PASSWORD=your_16_character_app_password
+    MAIL_FROM=your-email@gmail.com
+    MAIL_PORT=587
+    MAIL_SERVER=smtp.gmail.com
+    ```
+5.  **Set Environment Variables:**
     ```powershell
     $env:DATABASE_URL = "postgresql://farmvidhya:password@localhost:5432/user_db"
-    $env:SECRET_KEY = "a_very_secret_key_for_jwt_tokens"
+    $env:SECRET_KEY = "a-strong-secret-key-for-your-project"
     $env:ALGORITHM = "HS256"
-    $env:ACCESS_TOKEN_EXPIRE_MINUTES = "60"
     ```
-5.  **Run Server:** `uvicorn main:app --reload --port 8001`
+6.  **Launch the Service:**
+    ```powershell
+    uvicorn main:app --reload --port 8001
+    ```
+7.  **Access the API Docs:** `http://127.0.0.1:8001/docs`
