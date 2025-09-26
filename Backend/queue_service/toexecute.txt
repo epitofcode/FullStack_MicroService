@@ -1,6 +1,0 @@
-cd Backend\queue_service
-$env:DATABASE_URL = "postgresql://farmvidhya:password@localhost:5432/queue_db"
-$env:RABBITMQ_HOST = "localhost"
-$env:SECRET_KEY = "a_very_secret_key_for_jwt_tokens"
-$env:ALGORITHM = "HS256"
-uvicorn main:app --reload --port 8003

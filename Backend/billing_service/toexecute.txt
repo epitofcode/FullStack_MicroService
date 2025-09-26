@@ -1,3 +1,0 @@
-cd Backend\billing_service
-$env:DATABASE_URL = "postgresql://farmvidhya:password@localhost:5432/billing_db"
-uvicorn main:app --reload --port 8002

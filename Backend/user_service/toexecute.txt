@@ -1,6 +1,0 @@
-cd Backend\user_service
-$env:DATABASE_URL = "postgresql://farmvidhya:password@localhost:5432/user_db"
-$env:SECRET_KEY = "a_very_secret_key_for_jwt_tokens"
-$env:ALGORITHM = "HS256"
-$env:ACCESS_TOKEN_EXPIRE_MINUTES = "60"
-uvicorn main:app --reload --port 8001
