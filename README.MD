@@ -5,7 +5,7 @@
 
 This document serves as the single source of truth for the FarmVidhya.ai backend system. It details the service-oriented architecture, technology stack, local setup guide, and the complete, validated end-to-end workflow for processing conversational AI jobs.
 
-## 1. High-Level Description
+## 1. Description
 
 The FarmVidhya.ai backend is a cloud-native, distributed platform designed to handle complex, multi-step, asynchronous conversational AI workflows. Architected for resilience and scalability, its primary function is to accept user-uploaded audio files, orchestrate their processing through a chain of external Machine Learning APIs (STT, NMT, RAG, TTS), and deliver a final audio result.
 
