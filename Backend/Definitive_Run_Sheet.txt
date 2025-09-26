@@ -1,0 +1,131 @@
+==================================================
+  Definitive End-to-End System Test Plan
+==================================================
+
+PRE-REQUISITES:
+-----------------
+1. Infrastructure Running: Ensure your PostgreSQL and Kafka servers are running in WSL.
+2. All 6 Backend Services Running: Use the definitive run sheet to start all services (`billing`, `identity`, `queue`, `worker`, `orchestration`, `api_gateway`).
+3. Tools Ready: Have an API Client (like Postman or Insomnia) and a separate WSL terminal for `psql` ready.
+
+THE GOLDEN RULE: All API requests MUST be sent to the API Gateway at http://localhost:8000.
+
+---
+### TEST CASE 1: User Onboarding & Activation
+---
+Goal: Verify the api_gateway, identity_service, and worker_service (email task) collaborate to sign up a new user.
+
+**Step 1.1: Sign Up a New User**
+- ACTION: Send a POST request.
+- URL: http://localhost:8000/signup
+- BODY (JSON):
+  {
+    "email": "final.test@farmvidhya.ai",
+    "password": "CloudPassword123!"
+  }
+- OBSERVE: Watch the logs in the `api_gateway`, `identity_service`, and `worker_service` terminals.
+- ACTION: Find the "SIMULATING SENDING EMAIL" log in the `worker_service` terminal. **COPY THE 6-DIGIT OTP.**
+
+**Step 1.2: Verify the Account**
+- ACTION: Send a POST request.
+- URL: http://localhost:8000/verify-otp
+- BODY (JSON):
+  {
+    "email": "final.test@farmvidhya.ai",
+    "otp": "PASTE_THE_OTP_FROM_LOGS_HERE"
+  }
+- EXPECTED RESULT: A `200 OK` response confirming verification.
+
+---
+### TEST CASE 2: Authentication & API Key Provisioning
+---
+Goal: Verify that the active user can log in and provision a secret API key.
+
+**Step 2.1: Log In**
+- ACTION: Send a POST request.
+- URL: http://localhost:8000/login
+- BODY (x-www-form-urlencoded):
+  - Key: `username`, Value: `final.test@farmvidhya.ai`
+  - Key: `password`, Value: `CloudPassword123!`
+- EXPECTED RESULT: A `200 OK` response containing a JWT `access_token`.
+
+**Step 2.2: Get User ID (Manual Step)**
+- ACTION: In your `psql` terminal, connect to your central database (e.g., `psql -U farmvidhya -d farmvidhya_prod_db`).
+- QUERY: `SELECT id FROM users WHERE email = 'final.test@farmvidhya.ai';`
+- ACTION: **COPY THE USER's UUID** from the result.
+
+**Step 2.3: Create API Key**
+- ACTION: Send a POST request.
+- URL: http://localhost:8000/keys
+- HEADERS:
+  - Key: `x-user-id`
+  - Value: `PASTE_THE_USER_UUID_FROM_THE_DATABASE`
+- BODY (JSON):
+  {
+    "user_id": "PASTE_THE_USER_UUID_AGAIN_HERE"
+  }
+- EXPECTED RESULT: A `201 Created` response.
+- ACTION: Find the `plain_key` in the response body. **COPY THIS ENTIRE SECRET KEY** (it starts with `fv_`).
+
+---
+### TEST CASE 3: The Full Azure Staging & Workflow Pipeline
+---
+Goal: Validate the entire end-to-end flow, including `queue_service`, `billing_service`, Azure Blob Storage, Azure Queue Storage, and the `orchestration_service` workflow engine.
+
+**Step 3.1: Create a Dummy Audio File**
+- ACTION: In a WSL terminal, create a small file to upload.
+- COMMAND: `echo "this is a test audio file" > my_test_audio.wav`
+
+**Step 3.2: Initiate the Secure Upload**
+- ACTION: Send a POST request.
+- URL: http://localhost:8000/jobs/initiate-upload
+- HEADERS:
+  - Key: `Authorization`
+  - Value: `Bearer PASTE_YOUR_SECRET_fv_..._KEY_HERE`
+- BODY (JSON):
+  {
+    "filename": "my_test_audio.wav",
+    "workflow_type": "conversational-agent-telugu"
+  }
+- EXPECTED RESULT: A `201 Created` response.
+- ACTION: **COPY THE ENTIRE `upload_url`** from the response body.
+
+**Step 3.3: Simulate the Frontend Upload to Azure**
+- ACTION: Create a new request in your API Client.
+- METHOD: `PUT`
+- URL: **PASTE THE AZURE SAS `upload_url`** you just copied.
+- HEADERS:
+  - **CRITICAL:** You must add this header for the Azure upload to work.
+  - Key: `x-ms-blob-type`
+  - Value: `BlockBlob`
+- BODY:
+  - Select the `binary` option.
+  - Click "Select File" and choose the `my_test_audio.wav` file you created.
+- ACTION: Send the request.
+- EXPECTED RESULT: A `201 Created` response from Azure with an empty body.
+- VERIFY: You can optionally check your `uploads` container in the Azure Portal to see the file.
+
+**Step 3.4: Observe the Grand Finale Chain Reaction**
+- ACTION: Watch all your service terminals.
+- EXPECTED LOGS:
+  1. `worker_service`: The Azure Queue listener will receive a message and log `🚀 Job published to orchestrator.`
+  2. `orchestration_service`: This log will become very active, showing:
+     - "▶️ Processing job..."
+     - "Downloading file from Azure Blob..."
+     - "Workflow Step: Calling external ML API for 'stt'..."
+     - "Workflow Step: Calling external ML API for 'nmt'..."
+     - "Workflow Step: Calling external ML API for 'li_rag'..."
+     - "Workflow Step: Calling external ML API for 'tts'..."
+     - "Uploading result file to Azure Blob..."
+     - "Credits deducted successfully."
+     - "✅ Job/Workflow completed successfully."
+
+**Step 3.5: Final Database Verification**
+- ACTION: In your `psql` terminal.
+- QUERY: `SELECT workflow_type, status, result_data FROM jobs;`
+- EXPECTED RESULT: You will see a row for your job with `status` = `COMPLETED` and the `result_data` column will contain a JSON object with the Azure Blob URL of the final output file, like:
+  `{"result_audio_url": "https://<your-storage-account>.blob.core.windows.net/results/<job-id>/output.mp3"}`
+
+==================================================
+            END OF TEST PLAN
+==================================================

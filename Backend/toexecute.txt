@@ -1,0 +1,50 @@
+cd ~
+cd Backend
+source venv/bin/activate
+
+sudo service postgresql start (quantum)
+~/kafka/bin/kafka-server-start.sh ~/kafka/config/server.properties
+
+python -m uvicorn billing_service.main:app --port 8004
+python -m uvicorn identity_service.main:app --port 8001
+python -m uvicorn queue_service.main:app --port 8003
+python -m worker_service.worker
+python -m orchestration_service.worker
+python -m uvicorn api_gateway.main:app --port 8000 --reload
+
+
+
+
+DefaultEndpointsProtocol=https;AccountName=farmvidhyastoragepoc;AccountKey=CFLclOnSceE0aNz0ITvOuUfigMntRiMN3FDYYYEJdCYNk46b5QGNNO+moi62NKWTRKMgbiL25xGw+AStG7/Dqw==;EndpointSuffix=core.windows.net
+
+sudo -u postgres psql
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMGFjOGJjOC03ZTU5LTRjYzEtODE5OC03YjE0ZGJjNzNkMDkiLCJlbWFpbCI6InNyaXRlajQxQGdtYWlsLmNvbSIsImV4cCI6MTc1ODMwNDg2M30.6g3DVuIdwOKVDx_fulldoMlnRoi8rzjFRMh03z-kfEg
+
+20ac8bc8-7e59-4cc1-8198-7b14dbc73d09
+
+{
+    "id": "f45d0597-c705-4ec0-a29d-26e23d860bc4",
+    "plain_key": "fv_0njTQqtHuLKsAFDmJOoKV3wHWnprfopT4O6W4goaE90",
+    "key_prefix": "fv_0njTQqtHu",
+    "user_id": "20ac8bc8-7e59-4cc1-8198-7b14dbc73d09",
+    "created_at": "2025-09-19T17:10:53.191194Z",
+    "message": "Please save this key securely. You will not be able to see it again."
+}
+
+
+{
+    "job_id": "82518141-2c81-4da6-8a89-07c0f0888b4b",
+    "upload_url": "https://farmvidhyastoragepoc.blob.core.windows.net/uploads/82518141-2c81-4da6-8a89-07c0f0888b4b/test_audio.wav?se=2025-09-24T16%3A59%3A47Z&sp=cw&sv=2025-07-05&sr=b&sig=fTUAx8wyCXv1GdQ8tG28/80a4uE52J9%2BS0c2t2j4VAA%3D"
+}
+
+curl -X PUT \
+  -H "x-ms-blob-type: BlockBlob" \
+  -H "Content-Type: audio/wav" \
+  --data-binary "@test_audio.wav" \
+  "PASTE_YOUR_NEW_UPLOAD_URL_HERE"
+
+STT 	::  https://api.farmvaidya.ai/v1/docs
+NMT 	::  https://api.farmvaidya.ai/v2/docs
+LI_RAG 	::  https://api.farmvaidya.ai/v3/docs
+TTS		::  https://api.farmvaidya.ai/v4/docs
